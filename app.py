@@ -5,25 +5,39 @@ import altair as alt
 # --- 系統設定 ---
 st.set_page_config(page_title="諮商專業取向深度探索系統 (CTPS-Based)", page_icon="🧭", layout="wide")
 
-# --- Session State 初始化 (基於文獻的雙軸向) ---
+# --- Session State 初始化 ---
 if 'axis_obj_sub' not in st.session_state:
-    # X軸: 正值=客觀/實證/結構, 負值=主觀/建構/流動
     st.session_state.axis_obj_sub = 0.0 
 if 'axis_ana_exp' not in st.session_state:
-    # Y軸: 正值=理性/分析/思考, 負值=體驗/情感/覺察
     st.session_state.axis_ana_exp = 0.0
 if 'history' not in st.session_state:
     st.session_state.history = []
 
-# --- 輔助函數：更新雙軸分數 ---
+# --- 輔助函數 ---
 def update_axes(x_delta, y_delta, reasoning):
     st.session_state.axis_obj_sub += x_delta
     st.session_state.axis_ana_exp += y_delta
     st.session_state.history.append(reasoning)
 
+# --- CSS 樣式優化 (讓字體更好看) ---
+st.markdown("""
+<style>
+    .big-font {
+        font-size:24px !important;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+    .scenario-box {
+        background-color: #f0f2f6;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 5px solid #4a90e2;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # --- 側邊欄 ---
 st.sidebar.title("🧭 專業導航")
-st.sidebar.info("本系統計分邏輯依據 CTPS 與 TOPS-R 量表之核心維度設計。")
 step = st.sidebar.radio(
     "階段選擇：",
     ["前言：理論架構", "1. 隱喻投射 (角色觀)", "2. 臨床決策 (改變觀)", "3. 陰影探索 (價值觀)", "4. 空間配置 (框架觀)", "5. 綜合分析報告"]
@@ -33,129 +47,180 @@ step = st.sidebar.radio(
 # 前言
 # ==========================================
 if step == "前言：理論架構":
-    st.title("諮商專業取向深度探索系統")
-    st.markdown("""
-    ### 嚴謹與創意的結合
-    本系統旨在協助諮商師探索其潛在的**理論取向 (Theoretical Orientation)**。
-    所有的測驗環節皆對應至以下兩個學術核心維度 (Based on Poznanski & McLennan, 1995)：
-    
-    1.  **知識論立場 (Epistemology)**：您相信真理是客觀存在的(Objective)，還是個人主觀建構的(Subjective)？
-    2.  **介入焦點 (Focus)**：您傾向處理理性的認知結構(Analytical)，還是當下的情感體驗(Experiential)？
-    """)
-    st.warning("⚠️ 請憑直覺作答，這不是考試，沒有標準答案。")
+    st.title("諮商專業取向深度探索系統 v2.0")
+    st.markdown("### 歡迎來到您的專業探索旅程")
+    st.info("本系統經過優化，加入圖像引導與情境模擬，依據 CTPS 雙軸向理論協助您定位自己的治療風格。")
 
 # ==========================================
-# 階段 1: 隱喻投射 (對應：治療師角色與權力)
+# 階段 1: 隱喻投射
 # ==========================================
 elif step == "1. 隱喻投射 (角色觀)":
     st.header("Phase 1: 治療關係中的角色")
-    st.markdown("**理論依據**：此階段測量您在 *Directiveness (指導性)* 與 *Interpersonal Stance (人際立場)* 上的傾向。")
     
-    st.subheader("Q1. 登山隱喻")
-    st.write("如果諮商是一次登山，您覺得最自在的位置是？")
+    st.markdown("#### Q1. 如果諮商是一次登山，看著下方的示意圖，您覺得自己最像哪一種角色？")
     
-    choice1 = st.radio("請選擇：", [
-        "A. 嚮導：走在前面，手持地圖，預告路況 (高指導/客觀)",
-        "B. 伴侶：並肩而行，速度一致，相互扶持 (低指導/體驗)",
-        "C. 觀察者：走在後方，分析步伐，保持距離 (低指導/分析)",
-        "D. 教練：設定目標，在旁吶喊，修正姿勢 (高指導/理性)"
+    # 使用 Columns 排版圖片 (這裡使用網路圖庫的示意連結，您之後可以換成自己的)
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.image("https://images.unsplash.com/photo-1501555088652-021faa106b9b?w=300", caption="A. 嚮導")
+    with c2:
+        st.image("https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?w=300", caption="B. 伴侶")
+    with c3:
+        st.image("https://images.unsplash.com/photo-1533227297464-94291e6e9c43?w=300", caption="C. 觀察者")
+    with c4:
+        st.image("https://images.unsplash.com/photo-1526628953301-3e589a6a8b74?w=300", caption="D. 教練")
+
+    choice1 = st.radio("請選擇您的角色：", [
+        "A. 嚮導：我走在前面，熟悉路徑，能告訴個案哪裡安全、哪裡危險。",
+        "B. 伴侶：我走在旁邊，配合他的速度，我們一起經歷風雨。",
+        "C. 觀察者：我稍稍走在後方，保持全觀的視野，看清他走路的姿勢與慣性。",
+        "D. 教練：我在旁觀察與激勵，指導他調整呼吸與步伐，發揮潛能。"
     ])
     
     if st.button("確認 Q1"):
-        if "A" in choice1: update_axes(2.0, 1.0, "登山-嚮導: 傾向客觀指導與結構")
-        if "B" in choice1: update_axes(-2.0, -2.0, "登山-伴侶: 傾向主觀體驗與連結")
-        if "C" in choice1: update_axes(-1.0, 3.0, "登山-觀察者: 傾向內在動力分析")
-        if "D" in choice1: update_axes(2.0, 2.0, "登山-教練: 傾向理性行為修正")
-        st.success("已記錄您的角色傾向。")
+        if "A" in choice1: update_axes(2.0, 1.0, "角色-嚮導: 傾向客觀指導")
+        if "B" in choice1: update_axes(-2.0, -2.0, "角色-伴侶: 傾向主觀體驗")
+        if "C" in choice1: update_axes(-1.0, 3.0, "角色-觀察者: 傾向動力分析")
+        if "D" in choice1: update_axes(2.0, 2.0, "角色-教練: 傾向理性調整")
+        st.success("角色傾向已記錄。")
 
     st.markdown("---")
-    st.subheader("Q2. 量化校準題 (Likert Scale)")
-    st.write("請針對以下描述評分，以校準您的理論信度：")
-    q2_score = st.slider("「我認為治療師保持客觀中立的『技術專家』形象，比展現個人特質更重要。」", 1, 5, 3)
+    
+    # 放大加粗的題目
+    st.markdown('<p class="big-font">Q2. 請誠實評估以下敘述：</p>', unsafe_allow_html=True)
+    st.markdown('### 「我認為治療師保持客觀中立的『技術專家』形象，比展現個人特質更重要。」')
+    
+    q2_score = st.slider("滑動以評分 (1=完全不認同, 5=完全認同)", 1, 5, 3)
     
     if st.button("確認 Q2"):
-        # 1分=非常不同意(主觀), 5分=非常同意(客觀)
-        # 轉換為 -2 到 +2
         val = q2_score - 3
-        update_axes(val * 1.5, 0, f"校準題-專家形象: 分數{q2_score} (權重1.5)")
+        update_axes(val * 1.5, 0, f"校準題-專家形象: {q2_score}分")
         st.success("校準完成。")
 
 # ==========================================
-# 階段 2: 臨床決策 (對應：改變機制)
+# 階段 2: 臨床決策 (模糊化與細緻化)
 # ==========================================
 elif step == "2. 臨床決策 (改變觀)":
     st.header("Phase 2: 改變是如何發生的？")
-    st.markdown("**理論依據**：此階段測量您的 *Mechanism of Change (改變機制)* 信念。")
     
-    st.info("情境：個案小明陷入強烈的自我懷疑，在會談中不斷重複「我就是個失敗者」。")
+    st.markdown("請閱讀以下情境，並感受現場的氣氛。")
     
-    choice_scene = st.selectbox("您當下最想採取的介入策略是？", [
-        "請選擇...",
-        "1. 蘇格拉底式提問：檢視「失敗者」這個定義的證據與邏輯 (CBT)",
-        "2. 同理反映：深深地接納他此刻的挫折感，讓他感到被懂 (Humanistic)",
-        "3. 詮釋：連結他童年被父親批評的經驗，指出這是內射的聲音 (Psychodynamic)",
-        "4. 例外問句：詢問他過去有沒有哪一次覺得自己「稍微成功」的時候？ (SFBT)"
+    # 更細緻的情境描述
+    st.markdown("""
+    <div class="scenario-box">
+    <b>情境：</b><br>
+    個案小明（30歲，工程師）坐在你對面的沙發上。他整個人縮成一團，雙手緊緊抓著膝蓋，眼神盯著地板，已經沈默了五分鐘。<br><br>
+    空氣有些凝重，你感覺到他似乎想說話，但又像是卡住了。突然，他抬起頭，眼眶泛紅，用微弱顫抖的聲音吐出一句：<br>
+    <b>「我覺得……我這輩子好像註定就是個失敗品，不管怎麼努力，最後都會搞砸……」</b>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.write("")
+    st.subheader("Q: 在那一瞬間，你直覺最想對他說的一句話是？")
+    
+    # 模糊化選項：去除學派名詞，改為具體回應
+    choice_scene = st.radio("請依直覺選擇：", [
+        "1. 「你說你是『失敗品』，能不能多說一點，你是依據什麼證據來這樣定義自己的？」",
+        "2. （身體微微前傾，放慢語速）「聽起來你現在真的好挫折、好無力……那種感覺像是被徹底打敗了，是嗎？」",
+        "3. 「我注意到當你說這句話時，你的雙手抓得好緊，就像當年那個總是達不到父親要求的小男孩一樣……」",
+        "4. 「雖然你現在覺得很糟，但在過去這段日子裡，有沒有哪一個時刻，事情其實『沒有』搞砸得那麼嚴重？」"
     ])
     
-    if st.button("確認策略"):
-        if "1" in choice_scene: update_axes(2.0, 2.0, "情境-提問: 聚焦理性認知重構")
-        if "2" in choice_scene: update_axes(-2.0, -2.0, "情境-同理: 聚焦當下情感體驗")
-        if "3" in choice_scene: update_axes(-1.0, 3.0, "情境-詮釋: 聚焦潛意識洞察")
-        if "4" in choice_scene: update_axes(1.0, 1.0, "情境-例外: 聚焦建構解決方案") 
-        # SFBT 雖是後現代(主觀)，但在操作上偏向認知與行動(Obj/Ana)，故給予中間偏正值
-        st.success("介入策略已分析。")
+    if st.button("確認回應"):
+        if "1" in choice_scene: update_axes(2.0, 2.0, "情境-證據檢驗: 傾向理性重構") # CBT
+        if "2" in choice_scene: update_axes(-2.0, -2.0, "情境-情感反映: 傾向當下體驗") # Humanistic
+        if "3" in choice_scene: update_axes(-1.0, 3.0, "情境-動力詮釋: 傾向連結過去") # Psychodynamic
+        if "4" in choice_scene: update_axes(1.0, 1.0, "情境-尋找例外: 傾向行動建構") # SFBT/PostModern
+        st.success("介入風格已分析。")
 
 # ==========================================
-# 階段 3: 陰影探索 (對應：價值與反移情)
+# 階段 3: 陰影探索 (排序法)
 # ==========================================
 elif step == "3. 陰影探索 (價值觀)":
     st.header("Phase 3: 恐懼與避免")
-    st.markdown("**理論依據**：依據 *Coan (1979)*，諮商師的取向反映了其人格特質與對特定狀態的焦慮管理。")
+    st.markdown("榮格心理學認為，我們最無法忍受的特質（陰影），往往暗示了我們潛意識最在乎的價值。")
     
-    st.write("您最**無法忍受**自己成為哪一種治療師？")
-    shadow = st.multiselect("可複選 (這反映了您的逆向需求)：", [
-        "A. 失控的：界線模糊，被個案的情緒淹沒，不知所措。",
-        "B. 冷血的：像個機器人，雖有技術但沒有人味。",
-        "C. 沒效率的：談了很久卻原地打轉，沒有具體進展。",
-        "D. 武斷的：把自己的價值觀強加在個案身上。"
-    ])
+    st.subheader("請想像各種「糟糕的治療師」形象...")
+    
+    shadow_options = {
+        "A": "失控的治療師：界線模糊，被個案的情緒捲進去，跟著個案一起哭，不知所措。",
+        "B": "冷血的治療師：像個冰冷的分析機器，只有理論沒有溫度，完全感覺不到人性。",
+        "C": "鬼打牆的治療師：談了很久卻毫無進展，沒有目標，每週只是來聊聊天，浪費時間。",
+        "D. 霸道的治療師：自以為是專家，把自己的價值觀強加在個案身上，不聽個案解釋。"
+    }
+
+    st.write("請選出您心中的「第一名」與「第二名」無法忍受的特質：")
+    
+    # 避免全選，改為排序（Top 1 & Top 2）
+    shadow_1 = st.selectbox("💀 第一名最無法忍受（最像噩夢）的是：", ["請選擇..."] + list(shadow_options.values()))
+    shadow_2 = st.selectbox("💀 第二名無法忍受的是：", ["請選擇..."] + list(shadow_options.values()))
     
     if st.button("分析陰影"):
-        # 怕失控 -> 追求結構 (Objective)
-        if "A" in shadow: update_axes(1.5, 0, "陰影-怕失控: 潛在需求為結構與界線")
-        # 怕冷血 -> 追求關係 (Subjective/Experiential)
-        if "B" in shadow: update_axes(-1.5, -1.0, "陰影-怕冷血: 潛在需求為情感連結")
-        # 怕沒效 -> 追求目標 (Objective/Analytical)
-        if "C" in shadow: update_axes(1.0, 1.5, "陰影-怕沒效: 潛在需求為具體改變")
-        # 怕武斷 -> 追求尊重 (Subjective)
-        if "D" in shadow: update_axes(-1.5, 0, "陰影-怕武斷: 潛在需求為個案主體性")
-        st.success("陰影分析完成。")
+        if shadow_1 == "請選擇..." or shadow_2 == "請選擇...":
+            st.error("請完成兩項選擇。")
+        elif shadow_1 == shadow_2:
+            st.error("第一名與第二名不能相同，請重新選擇。")
+        else:
+            # 加權邏輯：第一名權重 1.5，第二名權重 1.0
+            def analyze_shadow(text, weight):
+                if "失控" in text: update_axes(1.5 * weight, 0, f"陰影-怕失控(w={weight}): 需求結構")
+                if "冷血" in text: update_axes(-1.5 * weight, -1.0 * weight, f"陰影-怕冷血(w={weight}): 需求情感")
+                if "鬼打牆" in text: update_axes(1.0 * weight, 1.5 * weight, f"陰影-怕沒效(w={weight}): 需求改變")
+                if "霸道" in text: update_axes(-1.5 * weight, 0, f"陰影-怕霸道(w={weight}): 需求尊重")
+
+            analyze_shadow(shadow_1, 1.5)
+            analyze_shadow(shadow_2, 1.0)
+            st.success("陰影價值觀分析完成。")
 
 # ==========================================
-# 階段 4: 空間配置 (對應：治療框架)
+# 階段 4: 空間配置 (圖示化)
 # ==========================================
 elif step == "4. 空間配置 (框架觀)":
     st.header("Phase 4: 物理環境與治療框架")
-    st.markdown("**理論依據**：環境心理學顯示，空間配置反映了治療師對 *Neutrality (中立性)* 與 *Transparency (透明度)* 的看法。")
+    st.write("閉上眼睛，想像您擁有一間完全屬於自己的諮商室。")
     
-    dist = st.slider("Q1. 理想的座位距離 (0=極近/膝蓋碰膝蓋, 10=極遠/甚至背對)", 0, 10, 5)
-    struct = st.checkbox("Q2. 諮商室內必須要有白板或掛圖 (視覺化工具)")
+    st.subheader("Q1. 您覺得最舒服的「座位距離」是？")
+    st.caption("請拖動滑桿，選擇最符合直覺的畫面")
+    
+    # 使用 select_slider 搭配 Emoji 讓距離感具象化
+    dist_choice = st.select_slider(
+        "距離選擇",
+        options=["🫂 親密接觸", "🤝 伸手可及", "🛋️ 一般社交 (約150cm)", "🔭 遙遙相望", "🛡️ 極度安全 (背對或極遠)"],
+        value="🛋️ 一般社交 (約150cm)"
+    )
+    
+    st.write(f"您選擇了：**{dist_choice}**")
+
+    st.markdown("---")
+    st.subheader("Q2. 關於設備")
+    # 明確定義白板的功能，避免混淆
+    whiteboard = st.checkbox("我希望牆上有一塊大白板或掛圖架（用途：方便教學、列點、分析結構或畫出循環圖）")
     
     if st.button("確認配置"):
-        # 距離：近=體驗/主觀, 遠=分析/客觀
-        # 5是中點，<5 往體驗扣分，>5 往分析加分
-        dist_score = (dist - 5) * 0.5
-        update_axes(0, dist_score, f"空間-距離: {dist}")
+        # 距離計分邏輯
+        # 親密/靠近 -> 體驗/主觀 (負分)
+        # 遙遠/安全 -> 分析/客觀 (正分)
+        score_map = {
+            "🫂 親密接觸": -2.0,
+            "🤝 伸手可及": -1.0,
+            "🛋️ 一般社交 (約150cm)": 0.0,
+            "🔭 遙遙相望": 1.0,
+            "🛡️ 極度安全 (背對或極遠)": 2.0
+        }
+        d_score = score_map[dist_choice]
+        # X軸稍微影響，主要影響 Y軸 (體驗 vs 分析)
+        update_axes(d_score * 0.5, d_score, f"空間-距離: {dist_choice}")
         
-        if struct:
-            update_axes(1.5, 1.0, "空間-白板: 重視結構化教學")
+        if whiteboard:
+            # 白板通常與 CBT/教學/結構有關
+            update_axes(1.5, 1.5, "空間-有白板: 重視結構化與視覺教學")
         else:
-            update_axes(-0.5, -0.5, "空間-無白板: 重視自然流動")
+            update_axes(-0.5, -0.5, "空間-無白板: 重視自然對話")
             
         st.success("空間心理分析完成。")
 
 # ==========================================
-# 階段 5: 綜合分析報告
+# 階段 5: 綜合分析報告 (不變)
 # ==========================================
 elif step == "5. 綜合分析報告":
     st.title("📊 諮商專業取向分析報告")
@@ -163,48 +228,32 @@ elif step == "5. 綜合分析報告":
     x = st.session_state.axis_obj_sub
     y = st.session_state.axis_ana_exp
     
-    # 1. 座標視覺化 (Scatter Plot)
-    st.subheader("1. 理論地圖定位 (Theoretical Mapping)")
-    st.markdown(f"您的落點座標：X (客觀性) = **{x:.2f}**, Y (理性分析) = **{y:.2f}**")
+    st.subheader("1. 理論地圖定位")
+    st.write(f"座標落點：X (客觀性) = {x:.1f}, Y (理性分析) = {y:.1f}")
     
-    # 建立數據框以繪圖
-    source = pd.DataFrame({
-        'X': [x], 'Y': [y], 'Label': ['您的位置']
-    })
+    # 繪圖數據
+    source = pd.DataFrame({'X': [x], 'Y': [y], 'Label': ['您的位置']})
     
-    # 背景象限定義
-    quadrants = pd.DataFrame({
-        'x': [-4, 4, -4, 4],
-        'y': [4, 4, -4, -4],
-        'text': ['精神分析/動力\n(Insight)', 'CBT/理情/特質因素\n(Rational)', '人本/存在/完形\n(Affective)', '行為/現實/策略\n(Action)']
-    })
-    
-    chart = alt.Chart(source).mark_circle(size=200, color='red').encode(
+    # 簡單繪圖
+    chart = alt.Chart(source).mark_circle(size=300, color='#e74c3c').encode(
         x=alt.X('X', scale=alt.Scale(domain=[-10, 10]), title='主觀/建構 <-----> 客觀/實證'),
         y=alt.Y('Y', scale=alt.Scale(domain=[-10, 10]), title='體驗/情感 <-----> 理性/思考'),
         tooltip=['Label', 'X', 'Y']
-    ).interactive()
+    ).interactive().properties(width=600, height=500)
     
-    # 加上文字標籤 (簡化版，Streamlit 繪圖限制)
     st.altair_chart(chart, use_container_width=True)
-    st.caption("上圖紅點為您的落點。四個角落代表不同學派的極端值。")
-
-    # 2. 結果解釋
-    st.subheader("2. 適配性解析")
     
+    # 象限解釋
+    st.subheader("2. 風格解析")
     if x >= 0 and y >= 0:
-        st.success("【第一象限：認知與行為取向】\n您傾向相信問題有其客觀成因，且能透過學習、思考與練習來修正。您適合結構化、目標導向的學派 (CBT, REBT, SFBT)。")
+        st.success("【第一象限：認知與行為取向】\n您傾向相信問題有其客觀成因，且能透過學習與練習來修正。適合 CBT, REBT, SFBT。")
     elif x < 0 and y >= 0:
-        st.info("【第二象限：心理動力取向】\n您傾向探索個案的內在世界與潛意識結構。您相信透過理性的洞察 (Insight) 與解釋，能帶來深層改變 (Psychoanalysis, Psychodynamic)。")
+        st.info("【第二象限：心理動力取向】\n您傾向探索個案的內在世界。相信透過理性的洞察 (Insight) 能帶來深層改變。適合精神分析、客體關係。")
     elif x < 0 and y < 0:
-        st.warning("【第三象限：人本與體驗取向】\n您相信關係本身就是治療。您重視此時此刻的真誠接觸與情感流動，甚於技術操作 (Person-Centered, Gestalt, Existential)。")
+        st.warning("【第三象限：人本與體驗取向】\n您相信關係本身就是治療。重視此時此刻的真誠接觸與情感流動。適合完形、人本、存在主義。")
     else:
-        st.error("【第四象限：策略與行動取向】\n這是一個較獨特的組合，重視具體的行動改變，但關注個別化的主觀意義。可能傾向於現實治療 (Reality Therapy) 或特定的行為訓練。")
+        st.error("【第四象限：策略與行動取向】\n重視具體的行動改變，但關注個別化的主觀意義。可能傾向於現實治療或策略學派。")
 
-    # 3. 歷程檢視
-    with st.expander("查看詳細判斷依據 (Trace Logic)"):
-        for i, item in enumerate(st.session_state.history):
-            st.write(f"{i+1}. {item}")
-
-    st.markdown("---")
-    st.caption("本報告僅供專業探索參考，依據 CTPS 理論架構生成。")
+    with st.expander("查看詳細判斷歷程"):
+        for item in st.session_state.history:
+            st.write(f"- {item}")
