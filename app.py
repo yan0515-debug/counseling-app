@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
+import numpy as np # 新增 numpy 進行統計計算
 
 # --- 系統設定 ---
 st.set_page_config(page_title="諮商專業取向深度探索系統 (CTOS-Pro)", page_icon="🧭", layout="wide")
@@ -12,6 +13,7 @@ if 'axis_ana_exp' not in st.session_state:
     st.session_state.axis_ana_exp = 0.0
 if 'history' not in st.session_state:
     st.session_state.history = [] 
+# 新增：記錄原始分數陣列，用於計算變異數 (Consistency Check)
 if 'raw_scores_x' not in st.session_state:
     st.session_state.raw_scores_x = []
 if 'raw_scores_y' not in st.session_state:
@@ -22,7 +24,7 @@ def update_axes(x_delta, y_delta, phase, choice_text, reasoning):
     st.session_state.axis_obj_sub += x_delta
     st.session_state.axis_ana_exp += y_delta
     
-    # 記錄原始分數變化
+    # 記錄原始分數變化，用於矛盾檢測
     st.session_state.raw_scores_x.append(x_delta)
     st.session_state.raw_scores_y.append(y_delta)
     
@@ -40,14 +42,14 @@ st.markdown("""
         background-color: #ffffff;
         border: 2px solid #e0e0e0;
         border-radius: 10px;
-        padding: 25px;
+        padding: 20px;
         text-align: center;
         height: 100%;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
-    .tool-icon { font-size: 45px; margin-bottom: 15px; }
-    .tool-title { font-size: 24px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; }
-    .tool-desc { font-size: 18px; color: #555; line-height: 1.6; text-align: left;}
+    .tool-icon { font-size: 40px; margin-bottom: 10px; }
+    .tool-title { font-size: 22px; font-weight: bold; color: #2c3e50; margin-bottom: 10px; }
+    .tool-desc { font-size: 16px; color: #555; line-height: 1.5; }
     .scenario-box { 
         background-color: #f8f9fa; 
         padding: 25px; 
@@ -78,65 +80,54 @@ step = st.sidebar.radio(
 )
 
 # ==========================================
-# 前言：恢復詳細版
+# 前言
 # ==========================================
 if step == "前言：方法論與架構":
     st.title("諮商專業取向深度探索系統 (CTOS-Pro)")
     st.markdown("### 系統建置邏輯與理論基礎")
-    
     st.markdown("""
-    本系統專為諮商心理學相關背景之學生與實務工作者設計，旨在透過多維度的自我評估，探索個人的**諮商理論取向 (Counseling Theoretical Orientation)**。
+    本系統專為諮商心理學背景之專業人員設計，旨在透過多維度的自我評估，探索個人的**諮商理論取向**。
     
     #### 1. 理論架構 (Theoretical Framework)
-    本測驗主要依據 **Poznanski & McLennan (1995)** 所提出的 **Counselor Theoretical Position Scale (CTPS)** 以及 **Worthington & Dillon (2011)** 的 **TOPS-R** 量表進行架構設計。系統將諮商取向解構為兩個核心的連續變項 (Continuum)：
-    
-    * **X 軸：知識論立場 (Epistemological Stance)**
-        * **客觀實證 (Objective/Empirical)**：傾向相信真理的外在性、可觀察性，重視結構、測量與科學證據。
-        * **主觀建構 (Subjective/Constructivist)**：傾向相信真理的內在性、個別性，重視現象學、個人意義與獨特經驗。
-    
-    * **Y 軸：介入焦點 (Intervention Focus)**
-        * **理性分析 (Rational/Analytical)**：傾向透過認知重構、邏輯分析、洞察 (Insight) 潛意識結構來促成改變。
-        * **情感體驗 (Experiential/Affective)**：傾向透過情感宣洩、此時此刻的覺察、矯正性情緒經驗來促成改變。
+    本測驗依據 **Poznanski & McLennan (1995) CTPS** 與 **TOPS-R** 量表，將取向解構為雙軸向：
+    * **X 軸：知識論立場** (客觀實證 vs. 主觀建構)
+    * **Y 軸：介入焦點** (理性分析 vs. 情感體驗)
 
-    #### 2. 評估方法論 (Methodology)
-    本系統採用 **三角檢證法 (Triangulation)** 設計題型，以提升效度：
-    * **隱喻投射 (Phase 1)**：測量潛意識中的治療師角色認同。
-    * **情境模擬 (Phase 2)**：測量臨床現場的直覺反應與介入偏好。
-    * **反向指標 (Phase 3)**：透過「陰影 (Shadow)」與恐懼，推論個人的核心價值（例如：恐懼失控可能反映對結構的需求）。
-    * **環境心理 (Phase 4)**：透過空間配置偏好，測量對治療框架與界線的看法。
+    #### 2. 檢測機制 (Quality Control)
+    為了確保結果的信度，本系統內建**矛盾檢測演算法**。若您的作答在不同階段出現高度牴觸（例如：在隱喻題選擇極度客觀，卻在情境題選擇極度主觀），系統將在最終報告中提出警示與整合性建議。
 
-    #### 3. 聲明與限制 (Limitations)
-    * **動態性**：諮商取向是一個動態發展的過程，本結果僅代表您「當下」的傾向，並非永久的標籤。
-    * **建議性質**：分析結果僅供自我覺察與督導討論之參考，不應作為評斷專業能力之依據。
+    #### 3. 聲明
+    * **動態性**：結果僅代表「當下」的傾向。
+    * **建議性質**：分析結果僅供自我覺察參考。
     
     ---
     #### ⚠️ 作答說明
-    本系統包含不同形式的題目（選擇、排序、情境）。**請注意：每一題作答完畢後，皆須點擊該題下方的「確認按鈕」，系統才會進行計分。**
+    **請注意：每一題作答完畢後，皆須點擊該題下方的「確認按鈕」，系統才會進行計分。**
     """)
 
 # ==========================================
-# Phase 1: 隱喻投射 (圖片更新)
+# Phase 1: 隱喻投射 (圖片與工具優化)
 # ==========================================
 elif step == "Phase 1. 隱喻投射 (角色觀)":
     st.header("Phase 1: 治療關係中的角色隱喻")
     
-    # --- Q1: 登山隱喻 ---
+    # --- Q1: 登山隱喻 (更換為更符合描述的圖片) ---
     st.markdown("#### Q1. 若將諮商歷程比喻為一次登山，請觀察下列圖像，您認為自己的功能最接近哪一種角色？")
     
     c1, c2 = st.columns(2)
     with c1:
-        # A. 嚮導：兩個人，其中一人指著遠方 (Direction)
-        st.image("https://images.unsplash.com/photo-1544367563-12123d845e89?w=500", caption="A")
+        # A. 嚮導：一人在前指路，一人在後
+        st.image("https://images.unsplash.com/photo-1501555088652-021faa106b9b?w=500", caption="A")
     with c2:
-        # B. 伴侶：兩個人並肩行走，互動親密 (Side by side)
-        st.image("https://images.unsplash.com/photo-1627662055655-2076fa4c6796?w=500", caption="B")
+        # B. 伴侶：兩人在雪地/山徑並肩行走
+        st.image("https://images.unsplash.com/photo-1605130284535-11dd9eedc58a?w=500", caption="B")
     
     c3, c4 = st.columns(2)
     with c3:
-        # C. 觀察者：一人在旁觀察紀錄，或透過鏡頭觀察 (Observation)
-        st.image("https://images.unsplash.com/photo-1523456386829-05574581ea3d?w=500", caption="C")
+        # C. 觀察者：站在高處或遠處觀看 (用望遠鏡或背影)
+        st.image("https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=500", caption="C")
     with c4:
-        # D. 教練：攀岩確保，明顯的指導與保護動作 (Support/Instruction)
+        # D. 教練：攀岩確保，明顯的指導與保護動作
         st.image("https://images.unsplash.com/photo-1522163182402-834f871fd851?w=500", caption="D")
 
     choice1 = st.radio("請選擇最貼近的角色原型：", [
@@ -155,11 +146,11 @@ elif step == "Phase 1. 隱喻投射 (角色觀)":
 
     st.markdown("---")
 
-    # --- Q2: 魔法工具 (卡片式說明 + 單選) ---
+    # --- Q2: 魔法工具 (卡片式設計 + 放大字體) ---
     st.markdown("#### Q2. 承上題，若您能擁有一項「核心工具」來協助個案，您的直覺首選為何？")
     st.markdown("請選擇您在治療中最習慣使用的「介入方向」。")
 
-    # 顯示卡片說明 (僅作展示)
+    # 使用 HTML 製作漂亮的卡片
     t1, t2 = st.columns(2)
     with t1:
         st.markdown("""
@@ -168,10 +159,16 @@ elif step == "Phase 1. 隱喻投射 (角色觀)":
             <div class="tool-title">手電筒</div>
             <div class="tool-desc">
                 <b>功能：</b>照亮黑暗角落<br>
-                <b>方向：</b>深入潛意識與未知
+                <b>方向：</b>深入潛意識與未知<br>
+                <b>隱喻：</b>看見被壓抑的真實
             </div>
         </div>
         """, unsafe_allow_html=True)
+        st.write("") # Spacer
+        if st.checkbox("選擇「手電筒」"):
+             update_axes(-1.0, 2.5, "P1-Q2", "手電筒", "工具：探索潛意識")
+             st.success("已選擇手電筒")
+
     with t2:
         st.markdown("""
         <div class="tool-card">
@@ -179,10 +176,15 @@ elif step == "Phase 1. 隱喻投射 (角色觀)":
             <div class="tool-title">毛毯</div>
             <div class="tool-desc">
                 <b>功能：</b>提供溫暖與包容<br>
-                <b>方向：</b>向內的情感撫慰
+                <b>方向：</b>向內的情感撫慰<br>
+                <b>隱喻：</b>建立安全的矯正性經驗
             </div>
         </div>
         """, unsafe_allow_html=True)
+        st.write("")
+        if st.checkbox("選擇「毛毯」"):
+            update_axes(-2.0, -1.5, "P1-Q2", "毛毯", "工具：提供涵容")
+            st.success("已選擇毛毯")
             
     st.write("") # Spacer
     
@@ -194,10 +196,16 @@ elif step == "Phase 1. 隱喻投射 (角色觀)":
             <div class="tool-title">鏡子</div>
             <div class="tool-desc">
                 <b>功能：</b>如實反映原貌<br>
-                <b>方向：</b>當下的現象學反映
+                <b>方向：</b>當下的現象學反映<br>
+                <b>隱喻：</b>不加扭曲的真誠一致
             </div>
         </div>
         """, unsafe_allow_html=True)
+        st.write("")
+        if st.checkbox("選擇「鏡子」"):
+            update_axes(-1.0, -1.0, "P1-Q2", "鏡子", "工具：現象學反映")
+            st.success("已選擇鏡子")
+
     with t4:
         st.markdown("""
         <div class="tool-card">
@@ -205,26 +213,19 @@ elif step == "Phase 1. 隱喻投射 (角色觀)":
             <div class="tool-title">指南針</div>
             <div class="tool-desc">
                 <b>功能：</b>指出正確方位<br>
-                <b>方向：</b>向外的目標導向
+                <b>方向：</b>向外的目標導向<br>
+                <b>隱喻：</b>回歸理性的現實判斷
             </div>
         </div>
         """, unsafe_allow_html=True)
-    
-    st.write("")
-    
-    # 單選題
-    tool_choice = st.radio("請選擇一項工具：", ["🔦 手電筒", "🧣 毛毯", "🪞 鏡子", "🧭 指南針"])
-
-    if st.button("確認 Q2"):
-        if "手電筒" in tool_choice: update_axes(-1.0, 2.5, "P1-Q2", "手電筒", "工具：探索潛意識")
-        elif "毛毯" in tool_choice: update_axes(-2.0, -1.5, "P1-Q2", "毛毯", "工具：提供涵容")
-        elif "鏡子" in tool_choice: update_axes(-1.0, -1.0, "P1-Q2", "鏡子", "工具：現象學反映")
-        elif "指南針" in tool_choice: update_axes(2.0, 1.5, "P1-Q2", "指南針", "工具：目標導向")
-        st.success("已記錄數據。")
+        st.write("")
+        if st.checkbox("選擇「指南針」"):
+            update_axes(2.0, 1.5, "P1-Q2", "指南針", "工具：目標導向")
+            st.success("已選擇指南針")
 
     st.markdown("---")
 
-    # --- Q3: 校準題 ---
+    # --- Q3: 校準題 (回歸) ---
     st.markdown("#### Q3. 理論校準 (Calibration)")
     st.markdown("""
     <div style="font-size: 18px; padding: 15px; border: 1px solid #ddd; background-color:#fafafa; border-radius: 5px;">
@@ -236,6 +237,7 @@ elif step == "Phase 1. 隱喻投射 (角色觀)":
     q3_score = st.slider("1 (非常不同意 / 重視個人特質) <---> 5 (非常同意 / 重視專家形象)", 1, 5, 3)
     
     if st.button("確認 Q3 校準"):
+        # 1分=主觀(-), 5分=客觀(+)
         val = q3_score - 3
         update_axes(val * 1.5, 0, "P1-Q3", f"校準分數 {q3_score}", "校準：專家形象認同度")
         st.success("校準數據已記錄。")
@@ -276,7 +278,7 @@ elif step == "Phase 2. 臨床決策 (改變觀)":
         st.success("數據已記錄。")
 
 # ==========================================
-# Phase 3: 陰影探索
+# Phase 3: 陰影探索 (增加題目)
 # ==========================================
 elif step == "Phase 3. 陰影探索 (價值觀)":
     st.header("Phase 3: 陰影與反移情")
@@ -321,7 +323,7 @@ elif step == "Phase 3. 陰影探索 (價值觀)":
         st.success("數據已記錄。")
 
 # ==========================================
-# Phase 4: 空間配置 (私密情境 + 描述回歸)
+# Phase 4: 空間配置 (更生活化的情境)
 # ==========================================
 elif step == "Phase 4. 空間配置 (框架觀)":
     st.header("Phase 4: 空間心理與人際界線")
@@ -336,34 +338,32 @@ elif step == "Phase 4. 空間配置 (框架觀)":
     def get_layout_svg(layout_type):
         base_svg = '<svg width="250" height="180" xmlns="http://www.w3.org/2000/svg" style="background-color:#ffffff; border:1px solid #eee;">'
         if layout_type == "SideBySide":
-            # 兩圓並排
             content = """<rect x="50" y="80" width="150" height="50" rx="10" fill="#f1c40f" opacity="0.3"/><circle cx="100" cy="105" r="20" fill="#3498db" /> <text x="90" y="110" fill="white" font-size="10">You</text><circle cx="150" cy="105" r="20" fill="#e74c3c" /> <text x="140" y="110" fill="white" font-size="10">Friend</text><text x="75" y="160" fill="#666" font-size="12">並肩而坐 (沙發)</text>"""
         elif layout_type == "L_Shape":
             content = """<rect x="120" y="90" width="40" height="40" fill="#ecf0f1" stroke="#bdc3c7"/><circle cx="90" cy="70" r="20" fill="#3498db" /> <text x="80" y="75" fill="white" font-size="10">You</text><circle cx="160" cy="140" r="20" fill="#e74c3c" /> <text x="150" y="145" fill="white" font-size="10">Friend</text><text x="150" y="40" fill="#666" font-size="12">舒適斜角 (L型)</text>"""
         elif layout_type == "Formal":
             content = """<rect x="105" y="40" width="40" height="100" fill="#ecf0f1" stroke="#bdc3c7"/><circle cx="60" cy="90" r="20" fill="#3498db" /> <text x="50" y="95" fill="white" font-size="10">You</text><circle cx="190" cy="90" r="20" fill="#e74c3c" /> <text x="180" y="95" fill="white" font-size="10">Friend</text><text x="90" y="25" fill="#666" font-size="12">面對面 (隔著桌子)</text>"""
         elif layout_type == "Separate":
-            # 獨立座椅 (無躺椅)
             content = """<circle cx="50" cy="90" r="20" fill="#3498db" /> <text x="40" y="95" fill="white" font-size="10">You</text><circle cx="200" cy="90" r="20" fill="#e74c3c" /> <text x="190" y="95" fill="white" font-size="10">Friend</text><path d="M 80 90 L 170 90" stroke="#999" stroke-width="1" stroke-dasharray="4"/><text x="85" y="150" fill="#666" font-size="12">獨立座椅 (保持距離)</text>"""
         return base_svg + content + '</svg>'
 
     c1, c2 = st.columns(2)
     with c1:
         st.markdown(get_layout_svg("SideBySide"), unsafe_allow_html=True)
-        if st.button("1. 並肩而坐 (沙發)：無阻隔，身體方向一致，感覺親密且支持。"):
+        if st.button("1. 並肩而坐 (沙發)"):
             update_axes(-2.0, -1.5, "P4-Q1", "並肩", "空間：高親密體驗")
             st.success("已選擇")
         st.markdown(get_layout_svg("L_Shape"), unsafe_allow_html=True)
-        if st.button("2. 舒適斜角 (L型)：有各自空間但容易眼神接觸，放鬆且自然。"):
+        if st.button("2. 舒適斜角 (L型)"):
             update_axes(-0.5, 0, "P4-Q1", "L型", "空間：人本折衷")
             st.success("已選擇")
     with c2:
         st.markdown(get_layout_svg("Formal"), unsafe_allow_html=True)
-        if st.button("3. 面對面 (隔桌)：可以看清對方表情，但有物體作為界線，感覺清晰。"):
+        if st.button("3. 面對面 (隔桌)"):
             update_axes(1.5, 1.0, "P4-Q1", "對坐", "空間：結構認知")
             st.success("已選擇")
         st.markdown(get_layout_svg("Separate"), unsafe_allow_html=True)
-        if st.button("4. 獨立座椅 (距離)：兩張單人椅，中間留有空間，保持彼此的獨立性。"):
+        if st.button("4. 獨立座椅 (距離)"):
             update_axes(1.0, 2.0, "P4-Q1", "獨立椅", "空間：界線觀察")
             st.success("已選擇")
 
@@ -378,12 +378,12 @@ elif step == "Phase 4. 空間配置 (框架觀)":
         st.success("數據已記錄。")
 
 # ==========================================
-# Phase 5: 綜合分析報告 (修復當機)
+# Phase 5: 綜合分析報告 (新增矛盾檢測)
 # ==========================================
 elif step == "Phase 5. 綜合分析報告":
     st.title("📊 諮商專業取向分析報告")
     
-    # 檢查是否有數據 (防呆機制)
+    # 檢查是否有數據
     if len(st.session_state.raw_scores_x) == 0:
         st.error("⚠️ 尚未偵測到作答數據。請回到各階段完成題目並點擊「確認按鈕」。")
         st.stop()
@@ -391,29 +391,25 @@ elif step == "Phase 5. 綜合分析報告":
     x = st.session_state.axis_obj_sub
     y = st.session_state.axis_ana_exp
 
-    # --- 1. 矛盾與亂答檢測 (純 Python 計算，不依賴 numpy) ---
+    # --- 1. 矛盾與亂答檢測 (Consistency Check) ---
     st.markdown("---")
     st.subheader("1. 資料品質檢測 (Consistency Check)")
     
-    # 手動計算變異數
-    def calculate_variance(data):
-        if len(data) < 2: return 0
-        mean = sum(data) / len(data)
-        return sum((i - mean) ** 2 for i in data) / len(data)
-
-    var_x = calculate_variance(st.session_state.raw_scores_x)
-    var_y = calculate_variance(st.session_state.raw_scores_y)
+    # 計算變異數 (Variance)
+    var_x = np.var(st.session_state.raw_scores_x) if len(st.session_state.raw_scores_x) > 1 else 0
+    var_y = np.var(st.session_state.raw_scores_y) if len(st.session_state.raw_scores_y) > 1 else 0
     total_variance = var_x + var_y
     
-    is_inconsistent = total_variance > 3.5 
-    is_random = (abs(x) < 2 and abs(y) < 2) and total_variance > 5.0 
+    # 判斷邏輯
+    is_inconsistent = total_variance > 3.5 # 設定一個閾值，變異過大代表忽左忽右
+    is_random = (abs(x) < 2 and abs(y) < 2) and total_variance > 5.0 # 分數抵消至原點且變異極大 -> 亂答
     
     if is_random:
         st.error("⚠️ **作答有效性警示**：系統偵測到您的作答模式存在高度隨機性。")
-        st.markdown("您的選項在不同階段互相高度牴觸，導致結果相互抵消。建議您重新靜心施測。")
+        st.markdown("您的選項在不同階段互相高度牴觸，導致結果相互抵消。這可能源於：\n1. 隨機填答。\n2. 對題目理解尚有落差。\n**建議您重新靜心施測，以獲取準確評估。**")
     elif is_inconsistent:
         st.warning("⚠️ **整合性提示**：系統偵測到您的諮商風格具有「高度彈性」或「內在衝突」。")
-        st.markdown("您在某些情境非常客觀，在其他情境又極度主觀。這顯示您可能正在發展一種**折衷/整合**的取向。")
+        st.markdown("您在某些情境非常客觀，在其他情境又極度主觀。這顯示您可能正在發展一種**折衷/整合 (Eclectic/Integrative)** 的取向，或者您在不同學派間仍在擺盪。這是一個值得在督導中討論的議題。")
     else:
         st.success("✅ **作答一致性檢核通過**：您的作答風格穩定，顯示出清晰的理論傾向。")
 
@@ -435,8 +431,13 @@ elif step == "Phase 5. 綜合分析報告":
         y=alt.Y('Y', scale=alt.Scale(domain=[-20, 20]), title='情感體驗 <---> 理性分析')
     )
     
+    # 十字線
     rules = alt.Chart(pd.DataFrame({'x': [0], 'y': [0]})).mark_rule(color='gray', strokeDash=[4,4]).encode(x='x', y='y')
+    
+    # 象限標籤
     text = alt.Chart(quadrants).mark_text(fontSize=16, color='#95a5a6').encode(x='x', y='y', text='text')
+    
+    # 您的落點
     points = base.mark_circle(size=500, color='#e74c3c').encode(tooltip=['Label', 'X', 'Y'])
     
     st.altair_chart((text + rules + points).properties(width=700, height=600).interactive(), use_container_width=True)
